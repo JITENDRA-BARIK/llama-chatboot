@@ -283,6 +283,9 @@
   const welcome    = document.getElementById("welcome");
   const toast      = document.getElementById("toast");
 
+  // ── Chat history stored in browser ──
+  let chatHistory = [];  // [{role: "user"|"bot", text: "..."}]
+
   // Auto-resize textarea
   inputEl.addEventListener("input", () => {
     inputEl.style.height = "auto";
@@ -366,11 +369,14 @@
       const res  = await fetch("/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text, history: chatHistory })
       });
       const data = await res.json();
       removeTyping();
       if (data.reply) {
+        // Save to browser history
+        chatHistory.push({ role: "user", text: text });
+        chatHistory.push({ role: "bot",  text: data.reply });
         addMessage(data.reply, "bot");
       } else {
         addMessage("⚠️ Error: " + (data.error || "Unknown error"), "bot");
@@ -384,8 +390,8 @@
     inputEl.focus();
   }
 
-  async function clearChat() {
-    await fetch("/reset", { method: "POST" });
+  function clearChat() {
+    chatHistory = [];
     messagesEl.innerHTML = "";
     messagesEl.appendChild(welcome);
     welcome.style.display = "";
