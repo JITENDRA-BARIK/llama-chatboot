@@ -18,19 +18,21 @@ HISTORY_LIMIT = int(os.getenv("CHAT_HISTORY_LIMIT", "20"))
 
 # ─── Build the LLM (Groq if API key set, else Ollama) ─────────────────────────
 def build_llm():
-    if GROQ_API_KEY:
+    # Read fresh every request so Vercel env vars are always picked up
+    groq_key = os.environ.get("GROQ_API_KEY", "").strip()
+    if groq_key:
         from langchain_groq import ChatGroq
-        groq_model = os.getenv("GROQ_MODEL", "llama3-8b-8192")
+        groq_model = os.environ.get("GROQ_MODEL", "llama3-8b-8192")
         return ChatGroq(
-            api_key=GROQ_API_KEY,
+            api_key=groq_key,
             model=groq_model,
             temperature=0.7,
         )
     else:
         from langchain_ollama import ChatOllama
         return ChatOllama(
-            model=MODEL_NAME,
-            base_url=BASE_URL,
+            model=os.environ.get("MODEL_NAME", "llama3.2"),
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
             temperature=0.7,
         )
 
