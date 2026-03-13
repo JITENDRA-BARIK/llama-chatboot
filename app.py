@@ -18,6 +18,12 @@ def _friendly_error_message(error: Exception) -> str:
     if "groq_api_key" in text or "api key" in text and "groq" in text:
         return "GROQ key is missing. Set GROQ_API_KEY in environment variables, or use Ollama locally."
 
+    if "model_decommissioned" in text or "decommissioned" in text and "groq" in text:
+        return (
+            "Your configured GROQ_MODEL is deprecated. Set GROQ_MODEL to a supported model "
+            "(for example: llama-3.1-8b-instant) and redeploy."
+        )
+
     if any(token in text for token in [
         "localhost:11434",
         "127.0.0.1:11434",
@@ -51,7 +57,7 @@ def healthz():
         "ok": True,
         "provider": _runtime_provider(),
         "groq_key_present": bool(os.environ.get("GROQ_API_KEY", "").strip()),
-        "groq_model": os.environ.get("GROQ_MODEL", "llama3-8b-8192"),
+        "groq_model": os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant"),
         "ollama_base_url": os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
         "vercel": bool(os.environ.get("VERCEL")),
         "vercel_env": os.environ.get("VERCEL_ENV", ""),

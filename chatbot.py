@@ -22,7 +22,14 @@ def build_llm():
     groq_key = os.environ.get("GROQ_API_KEY", "").strip()
     if groq_key:
         from langchain_groq import ChatGroq
-        groq_model = os.environ.get("GROQ_MODEL", "llama3-8b-8192")
+
+        # Handle deprecated model names gracefully.
+        model_aliases = {
+            "llama3-8b-8192": "llama-3.1-8b-instant",
+        }
+        configured_model = os.environ.get("GROQ_MODEL", "llama-3.1-8b-instant")
+        groq_model = model_aliases.get(configured_model, configured_model)
+
         return ChatGroq(
             api_key=groq_key,
             model=groq_model,
