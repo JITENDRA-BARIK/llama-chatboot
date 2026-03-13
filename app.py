@@ -1,10 +1,33 @@
 import os
 from flask import Flask, render_template, request, jsonify
-from chatbot import Chatbot, HISTORY_LIMIT, SYSTEM_PROMPT, build_llm, build_prompt
+from chatbot import HISTORY_LIMIT, build_llm, build_prompt
 from langchain_core.messages import HumanMessage, AIMessage
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change-me-in-production")
+
+
+def _friendly_error_message(error: Exception) -> str:
+    raw = str(error)
+    text = raw.lower()
+
+    if "groq_api_key" in text or "api key" in text and "groq" in text:
+        return "GROQ key is missing. Set GROQ_API_KEY in environment variables, or use Ollama locally."
+
+    if any(token in text for token in [
+        "localhost:11434",
+        "connection refused",
+        "failed to establish a new connection",
+        "connecterror",
+        "timed out",
+        "ollama",
+    ]):
+        return (
+            "Cannot reach Ollama server. Start Ollama (ollama serve) and ensure "
+            "OLLAMA_BASE_URL is correct (default: http://localhost:11434)."
+        )
+
+    return raw
 
 @app.route("/")
 def index():
@@ -12,7 +35,7 @@ def index():
 
 @app.route("/chat", methods=["POST"])
 def chat():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     user_input = data.get("message", "").strip()
     history_raw = data.get("history", [])  # [{"role":"user"|"bot", "text":"..."}]
 
@@ -36,7 +59,7 @@ def chat():
         return jsonify({"reply": response.content})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": _friendly_error_message(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

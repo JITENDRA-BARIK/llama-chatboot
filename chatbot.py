@@ -29,15 +29,34 @@ def build_llm():
             temperature=0.7,
         )
     else:
+        chat_ollama_cls = None
+
+        # Preferred package (newer)
         try:
-            from langchain_ollama import ChatOllama
-            return ChatOllama(
-                model=os.environ.get("MODEL_NAME", "llama3.2"),
-                base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
-                temperature=0.7,
-            )
+            from langchain_ollama import ChatOllama as _ChatOllama
+            chat_ollama_cls = _ChatOllama
         except ImportError:
-            raise RuntimeError("No GROQ_API_KEY set and langchain-ollama is not available. Please set GROQ_API_KEY.")
+            pass
+
+        # Backward-compatible fallback
+        if chat_ollama_cls is None:
+            try:
+                from langchain_community.chat_models import ChatOllama as _ChatOllama
+                chat_ollama_cls = _ChatOllama
+            except ImportError:
+                pass
+
+        if chat_ollama_cls is None:
+            raise RuntimeError(
+                "No GROQ_API_KEY set and no Ollama chat integration is installed. "
+                "Install langchain-ollama or set GROQ_API_KEY."
+            )
+
+        return chat_ollama_cls(
+            model=os.environ.get("MODEL_NAME", "llama3.2"),
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+            temperature=0.7,
+        )
 
 # ─── Build the prompt template ────────────────────────────────────────────────
 def build_prompt() -> ChatPromptTemplate:
