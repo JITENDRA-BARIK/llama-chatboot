@@ -24,7 +24,7 @@ def _friendly_error_message(error: Exception) -> str:
     ]):
         return (
             "Cannot reach Ollama server. Start Ollama (ollama serve) and ensure "
-            "OLLAMA_BASE_URL is correct (default: http://localhost:11434)."
+            "OLLAMA_BASE_URL is correct (default: http://127.0.0.1:11434)."
         )
 
     return raw

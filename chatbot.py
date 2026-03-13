@@ -6,7 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 # ─── Load environment variables ───────────────────────────────────────────────
 load_dotenv()
 
-BASE_URL      = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+BASE_URL      = os.getenv("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 MODEL_NAME    = os.getenv("MODEL_NAME", "llama3.2")
 GROQ_API_KEY  = os.getenv("GROQ_API_KEY", "")
 SYSTEM_PROMPT = os.getenv(
@@ -54,7 +54,7 @@ def build_llm():
 
         return chat_ollama_cls(
             model=os.environ.get("MODEL_NAME", "llama3.2"),
-            base_url=os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434"),
+            base_url=os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
             temperature=0.7,
         )
 
