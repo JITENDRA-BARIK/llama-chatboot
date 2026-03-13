@@ -52,9 +52,19 @@ def build_llm():
                 "Install langchain-ollama or set GROQ_API_KEY."
             )
 
+        base_url = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
+        is_vercel = bool(os.environ.get("VERCEL"))
+
+        if is_vercel and ("127.0.0.1" in base_url or "localhost" in base_url):
+            raise RuntimeError(
+                "This app is running on Vercel and cannot access local Ollama at "
+                "127.0.0.1/localhost. Set GROQ_API_KEY in Vercel, or set "
+                "OLLAMA_BASE_URL to a publicly reachable Ollama endpoint."
+            )
+
         return chat_ollama_cls(
             model=os.environ.get("MODEL_NAME", "llama3.2"),
-            base_url=os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+            base_url=base_url,
             temperature=0.7,
         )
 

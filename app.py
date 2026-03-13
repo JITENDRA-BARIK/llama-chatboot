@@ -7,6 +7,10 @@ app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "change-me-in-production")
 
 
+def _runtime_provider() -> str:
+    return "groq" if os.environ.get("GROQ_API_KEY", "").strip() else "ollama"
+
+
 def _friendly_error_message(error: Exception) -> str:
     raw = str(error)
     text = raw.lower()
@@ -16,12 +20,19 @@ def _friendly_error_message(error: Exception) -> str:
 
     if any(token in text for token in [
         "localhost:11434",
+        "127.0.0.1:11434",
         "connection refused",
         "failed to establish a new connection",
         "connecterror",
         "timed out",
         "ollama",
     ]):
+        if os.getenv("VERCEL"):
+            return (
+                "This deployment is on Vercel, so local Ollama (127.0.0.1/localhost) "
+                "is not reachable. Set GROQ_API_KEY in Vercel Environment Variables and "
+                "redeploy, or set OLLAMA_BASE_URL to a public Ollama endpoint."
+            )
         return (
             "Cannot reach Ollama server. Start Ollama (ollama serve) and ensure "
             "OLLAMA_BASE_URL is correct (default: http://127.0.0.1:11434)."
@@ -32,6 +43,19 @@ def _friendly_error_message(error: Exception) -> str:
 @app.route("/")
 def index():
     return render_template("index.html")
+
+
+@app.route("/healthz")
+def healthz():
+    return jsonify({
+        "ok": True,
+        "provider": _runtime_provider(),
+        "groq_key_present": bool(os.environ.get("GROQ_API_KEY", "").strip()),
+        "groq_model": os.environ.get("GROQ_MODEL", "llama3-8b-8192"),
+        "ollama_base_url": os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434"),
+        "vercel": bool(os.environ.get("VERCEL")),
+        "vercel_env": os.environ.get("VERCEL_ENV", ""),
+    })
 
 @app.route("/chat", methods=["POST"])
 def chat():
